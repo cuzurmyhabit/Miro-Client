@@ -1,0 +1,82 @@
+{
+  "project_info": {
+    "project_number": "559850230380",
+    "project_id": "miro-b6680",
+    "storage_bucket": "miro-b6680.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:559850230380:android:09a4ef3581218c18ab3e49",
+        "android_client_info": {
+          "package_name": "com.example.flutter_application_1"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "559850230380-esq6j1qesi0m19ml804nu1cadjtjk0jj.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCL8S5os2PvS3qlN4mg3sQbBs9Pj1KvS9M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "559850230380-esq6j1qesi0m19ml804nu1cadjtjk0jj.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "559850230380-kvec23hi88s9dno4frl6jh2bk4cimd10.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.miro"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:559850230380:android:33a772f9245ee96dab3e49",
+        "android_client_info": {
+          "package_name": "com.example.miro"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "559850230380-esq6j1qesi0m19ml804nu1cadjtjk0jj.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCL8S5os2PvS3qlN4mg3sQbBs9Pj1KvS9M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "559850230380-esq6j1qesi0m19ml804nu1cadjtjk0jj.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "559850230380-kvec23hi88s9dno4frl6jh2bk4cimd10.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.miro"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,77 @@
+name: miro
+description: "A new Flutter project."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.9.0
+
+
+dependencies:
+  flutter:
+    sdk: flutter
+  intl: ^0.20.2 # 날짜 포맷
+  uuid: ^4.5.1 # uuid 만들기
+  dio: ^5.0.0
+  path_provider: ^2.0.0
+  url_launcher: ^6.1.7
+  open_file: ^3.3.2
+  firebase_core: ^3.15.2
+  firebase_auth: ^5.7.0
+  cloud_firestore: ^5.6.12
+  http: ^1.5.0
+  path: ^1.8.3
+  http_parser: ^4.0.2
+  file_picker: ^6.0.0
+  google_sign_in: ^6.1.4
+  firebase_ui_oauth_google: ^1.4.3
+  dropdown_button2: ^2.3.9
+  cupertino_icons: ^1.0.8
+  image_picker: ^1.1.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/coverImg/cover.png
+    - assets/icons/home_icon.png
+    - assets/icons/class_icon.png
+    - assets/icons/chat_icon.png
+    - assets/icons/mypage_icon.png
+    - assets/google_logo.png
+    - assets/home_logo.png
+    - assets/icons/home_hover_icon.png
+    - assets/icons/class_hover_icon.png
+    - assets/icons/chat_hover_icon.png
+    - assets/icons/mypage_hover_icon.png
+
+  fonts:
+    - family: Pretendard
+      fonts:
+        - asset: assets/fonts/Pretendard-Thin.ttf
+          weight: 100
+        - asset: assets/fonts/Pretendard-ExtraLight.ttf
+          weight: 200
+        - asset: assets/fonts/Pretendard-Light.ttf
+          weight: 300
+        - asset: assets/fonts/Pretendard-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Pretendard-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Pretendard-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Pretendard-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Pretendard-ExtraBold.ttf
+          weight: 800
+        - asset: assets/fonts/Pretendard-Black.ttf
+          weight: 900
+
+
