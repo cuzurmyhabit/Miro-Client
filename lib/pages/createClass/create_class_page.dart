@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:miro/api/addClass_api.dart';
-import '../main/class_list_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+import 'package:path/path.dart' as path;
 
 class CreateClassPage extends StatefulWidget {
   const CreateClassPage({super.key});
@@ -12,49 +15,126 @@ class CreateClassPage extends StatefulWidget {
 }
 
 class _CreateClassPageState extends State<CreateClassPage> {
-  // 1. 상태 변수 정의 및 필수 필드 변수 추가
   String _selectedCategory = '디자인';
   DateTime _startDate = DateTime.now();
   DateTime _endDate = DateTime.now().add(const Duration(days: 7));
 
-  // 필수 입력 필드 상태 변수
   String _className = '';
   String _classDescription = '';
   String _classCapacity = '';
   String _classCondition = '';
   String _classCaution = '';
 
-  final DateFormat _dateFormat = DateFormat('yyyy. MM. dd');
-  bool _isLoading = false; //  로딩 상태 추가
+  // 이미지 관련 변수
+  File? _coverImageFile;
+  String? _coverImageUrl;
+  bool _isUploadingImage = false;
 
-  // 모든 필수 필드가 유효한지 확인하는 Getter
+  final DateFormat _dateFormat = DateFormat('yyyy. MM. dd');
+  bool _isLoading = false;
+  final ImagePicker _picker = ImagePicker();
+
+  // 모든 필수 필드 유효성 검사
   bool get _isFormValid {
     return _className.isNotEmpty &&
         _classDescription.isNotEmpty &&
         _classCapacity.isNotEmpty &&
         _classCondition.isNotEmpty &&
-        _classCaution.isNotEmpty;
-    // 참고: 커버 사진 업로드 여부는 현재 상태 변수에 없으므로 제외했습니다.
+        _classCaution.isNotEmpty &&
+        _coverImageFile != null;
   }
 
-  // 커버 사진 업로드 (더미 로직)
-  void _uploadCoverPhoto() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("커버 사진 업로드 기능을 실행합니다. (실제 파일 선택)"),
-        duration: Duration(seconds: 1),
-      ),
-    );
+  // 커버 사진 업로드
+  Future<void> _uploadCoverPhoto() async {
+    try {
+      final XFile? pickedFile = await _picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1920,
+        maxHeight: 1080,
+        imageQuality: 85,
+      );
+
+      if (pickedFile != null) {
+        // 파일 확장자 확인
+        final extension = path.extension(pickedFile.path).toLowerCase();
+        if (extension != '.png' && extension != '.jpg' && extension != '.jpeg') {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("PNG 또는 JPG 파일만 업로드 가능합니다.")),
+            );
+          }
+          return;
+        }
+
+        setState(() {
+          _coverImageFile = File(pickedFile.path);
+          _isUploadingImage = true;
+        });
+
+        // Firebase Storage에 업로드
+        await _uploadImageToFirebase(_coverImageFile!);
+
+        setState(() {
+          _isUploadingImage = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _isUploadingImage = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("이미지 선택 중 오류가 발생했습니다: $e")),
+        );
+      }
+    }
   }
 
-  // 분야 선택 로직
+  // Firebase Storage에 이미지 업로드
+  Future<void> _uploadImageToFirebase(File imageFile) async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) throw Exception("로그인이 필요합니다.");
+
+      final String fileName = 
+          'class_covers/${user.uid}/${DateTime.now().millisecondsSinceEpoch}${path.extension(imageFile.path)}';
+      
+      final Reference storageRef = FirebaseStorage.instance.ref().child(fileName);
+      final UploadTask uploadTask = storageRef.putFile(imageFile);
+      final TaskSnapshot snapshot = await uploadTask;
+      final String downloadUrl = await snapshot.ref.getDownloadURL();
+
+      setState(() {
+        _coverImageUrl = downloadUrl;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("커버 이미지가 업로드되었습니다."),
+            duration: Duration(seconds: 1),
+          ),
+        );
+      }
+    } catch (e) {
+      print("❌ 이미지 업로드 오류: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("이미지 업로드 실패: $e")),
+        );
+      }
+      rethrow;
+    }
+  }
+
+  // 분야 선택
   void _selectCategory(String category) {
     setState(() {
       _selectedCategory = category;
     });
   }
 
-  // 기간 선택 로직 (캘린더 사용)
+  // 날짜 선택
   Future<void> _selectDate(
     BuildContext context, {
     required bool isStartDate,
@@ -87,60 +167,67 @@ class _CreateClassPageState extends State<CreateClassPage> {
     }
   }
 
-  // 클래스 생성 API 호출 함수 추가
+  // 클래스 생성 제출
   Future<void> _submitClass() async {
     if (!_isFormValid) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("모든 필수 항목을 입력해주세요.")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("모든 필수 항목을 입력해주세요."))
+      );
+      return;
+    }
+
+    if (_coverImageUrl == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("커버 이미지를 업로드해주세요."))
+      );
       return;
     }
 
     setState(() => _isLoading = true);
 
     try {
-      // API 호출
       final coverImages = [
         {
-          "fileName": "cover.png",
-          "url":
-              "https://your-server.com/assets/cover.png", // 실제 서버에 배포된 URL 필요
-          "path": "/assets/cover.png",
+          "fileName": path.basename(_coverImageFile!.path),
+          "url": _coverImageUrl!,
+          "path": _coverImageUrl!,
         },
       ];
 
       final user = FirebaseAuth.instance.currentUser;
       final String creatorUid = user!.uid;
+      
       final result = await AddClassApiService.addClass(
-        classUid: DateTime.now().millisecondsSinceEpoch.toString(), // 간단한 UID
-        creatorUid: creatorUid, // 실제 로그인된 사용자 UID로 교체
-        coverImg: coverImages, // 커버 사진 (임시)
+        classUid: DateTime.now().millisecondsSinceEpoch.toString(),
+        creatorUid: creatorUid,
+        coverImg: coverImages,
         className: _className,
         description: _classDescription,
         field: _selectedCategory,
         requirement: _classCondition,
         caution: _classCaution,
         capacity: _classCapacity,
-        startDate: _startDate.toIso8601String(), // ISO8601 포맷으로 변환
+        startDate: _startDate.toIso8601String(),
         endDate: _endDate.toIso8601String(),
       );
 
-      // 성공 시 페이지 이동
+      print("✅ 서버 응답: $result");
+
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("클래스가 성공적으로 생성되었습니다.")));
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const ClassListPage()),
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("클래스가 성공적으로 생성되었습니다."),
+            duration: Duration(seconds: 2),
+          ),
+        );
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("클래스 생성 실패: $e"))
         );
       }
-
-      print(" 서버 응답: $result");
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("클래스 생성 실패: $e")));
       print("❌ 오류 발생: $e");
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -160,11 +247,11 @@ class _CreateClassPageState extends State<CreateClassPage> {
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
           ),
         ),
-        backgroundColor: isSelected ? Color(0xFF6DEDC2) : Colors.grey[200],
+        backgroundColor: isSelected ? const Color(0xFF6DEDC2) : Colors.grey[200],
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
           side: BorderSide(
-            color: isSelected ? Color(0xFF6DEDC2) : Colors.transparent,
+            color: isSelected ? const Color(0xFF6DEDC2) : Colors.transparent,
             width: 1.5,
           ),
         ),
@@ -173,7 +260,7 @@ class _CreateClassPageState extends State<CreateClassPage> {
     );
   }
 
-  // 기간 날짜 박스 위젯
+  // 날짜 박스 위젯
   Widget _buildDateBox(DateTime date, {required bool isStartDate}) {
     return Expanded(
       child: InkWell(
@@ -200,7 +287,7 @@ class _CreateClassPageState extends State<CreateClassPage> {
     );
   }
 
-  // 공통 텍스트 필드 위젯
+  // 텍스트 필드 위젯
   Widget _buildTextField({
     required String label,
     required String hintText,
@@ -258,43 +345,87 @@ class _CreateClassPageState extends State<CreateClassPage> {
           onPressed: () => Navigator.pop(context),
         ),
         elevation: 0,
-        foregroundColor: Colors.black, // 아이콘 색상 설정
+        foregroundColor: Colors.black,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            // 3. 커버 사진 섹션
+            // 커버사진 섹션
             const Text(
               "커버사진",
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             InkWell(
-              onTap: _uploadCoverPhoto,
+              onTap: _isUploadingImage ? null : _uploadCoverPhoto,
               borderRadius: BorderRadius.circular(10),
               child: Container(
                 height: 180,
                 decoration: BoxDecoration(
                   color: Colors.grey[200],
                   borderRadius: BorderRadius.circular(10),
+                  image: _coverImageFile != null
+                      ? DecorationImage(
+                          image: FileImage(_coverImageFile!),
+                          fit: BoxFit.cover,
+                        )
+                      : null,
                 ),
-                child: const Center(
-                  child: Icon(Icons.add, size: 40, color: Colors.grey),
-                ),
+                child: _isUploadingImage
+                    ? const Center(
+                        child: CircularProgressIndicator(
+                          color: Color(0xFF6DEDC2),
+                        ),
+                      )
+                    : _coverImageFile == null
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.add, size: 40, color: Colors.grey),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'PNG 또는 JPG 파일 업로드',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : Align(
+                            alignment: Alignment.topRight,
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.black54,
+                                  borderRadius: BorderRadius.circular(5),
+                                ),
+                                padding: const EdgeInsets.all(4),
+                                child: const Icon(
+                                  Icons.edit,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                              ),
+                            ),
+                          ),
               ),
             ),
             const SizedBox(height: 24),
 
-            // 4. 클래스 이름 섹션
+            // 클래스 이름
             _buildTextField(
               label: "클래스 이름",
               hintText: "클래스 이름을 입력해주세요",
               onChanged: (value) => setState(() => _className = value),
             ),
 
-            // 5. 클래스 설명 섹션
+            // 클래스 설명
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -303,7 +434,7 @@ class _CreateClassPageState extends State<CreateClassPage> {
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 Text(
-                  "${_classDescription.length}/200", // 입력 길이를 반영
+                  "${_classDescription.length}/200",
                   style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                 ),
               ],
@@ -312,17 +443,17 @@ class _CreateClassPageState extends State<CreateClassPage> {
             TextField(
               onChanged: (value) => setState(() => _classDescription = value),
               maxLines: 4,
-              maxLength: 200, // 최대 길이 제한
+              maxLength: 200,
               decoration: const InputDecoration(
                 hintText: "클래스에 관한 설명을 입력해주세요",
                 border: OutlineInputBorder(),
                 contentPadding: EdgeInsets.all(10),
-                counterText: "", // 기본 길이 카운터 숨김 (위에서 커스텀 표시)
+                counterText: "",
               ),
             ),
             const SizedBox(height: 24),
 
-            // 6. 분야 섹션 (단일 선택 가능)
+            // 분야
             const Text(
               "분야",
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -339,7 +470,7 @@ class _CreateClassPageState extends State<CreateClassPage> {
             ),
             const SizedBox(height: 24),
 
-            // 7. 인원 섹션
+            // 인원
             _buildTextField(
               label: "인원",
               subText: "최대 인원수를 설정해주세요",
@@ -348,7 +479,7 @@ class _CreateClassPageState extends State<CreateClassPage> {
               onChanged: (value) => setState(() => _classCapacity = value),
             ),
 
-            // 8. 조건 섹션
+            // 조건
             _buildTextField(
               label: "조건",
               subText: "클래스 가입 조건을 설정해주세요",
@@ -356,7 +487,7 @@ class _CreateClassPageState extends State<CreateClassPage> {
               onChanged: (value) => setState(() => _classCondition = value),
             ),
 
-            // 9. 주의사항 섹션
+            // 주의사항
             _buildTextField(
               label: "주의",
               subText: "클래스의 주의사항을 입력해주세요",
@@ -364,7 +495,7 @@ class _CreateClassPageState extends State<CreateClassPage> {
               onChanged: (value) => setState(() => _classCaution = value),
             ),
 
-            // 10. 기간 섹션 (캘린더 선택 가능)
+            // 기간
             const Text(
               "기간",
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -382,17 +513,14 @@ class _CreateClassPageState extends State<CreateClassPage> {
             ),
             const SizedBox(height: 40),
 
-            // 11. 시작하기 버튼 (가장 마지막에 추가)
-            //  시작하기 버튼 교체
+            // 시작하기 버튼
             Padding(
               padding: const EdgeInsets.only(bottom: 16.0),
               child: SizedBox(
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
-                  onPressed: _isFormValid && !_isLoading
-                      ? _submitClass
-                      : null, // 수정
+                  onPressed: _isFormValid && !_isLoading ? _submitClass : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _isFormValid
                         ? const Color(0xFF6DEDC2)

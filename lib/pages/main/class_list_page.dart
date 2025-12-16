@@ -337,7 +337,7 @@ class _ClassListPageState extends State<ClassListPage> {
                             top: 16,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF6DEDC2),
+                            color: const Color(0xFF6DEDC2), // 💡 변경: 밝은 회색
                             borderRadius: BorderRadius.circular(12),
                           ),
                           alignment: Alignment.center,
@@ -408,106 +408,197 @@ class _ClassListPageState extends State<ClassListPage> {
     });
   }
 
-  Widget _buildFilterChip(String label, ClassCategory category) {
-    final bool isSelected = _selectedCategory == category;
-    return GestureDetector(
-      onTap: () => _onCategoryTap(category),
-      child: Container(
-        height: 40,
-        alignment: Alignment.center,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        margin: const EdgeInsets.only(right: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF6DEDC2) : const Color(0xFFF5F5F5),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected
-                ? const Color(0xFF6DEDC2)
-                : const Color(0xFFCECECE),
-          ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w400,
-            color: isSelected
-                ? const Color(0xFF424242)
-                : const Color(0xFF616161),
-          ),
+Widget _buildFilterChip(String label, ClassCategory category) {
+  final bool isSelected = _selectedCategory == category;
+
+  return GestureDetector(
+    onTap: () => _onCategoryTap(category),
+    child: Container(
+      height: 40,
+      alignment: Alignment.center,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      margin: const EdgeInsets.only(right: 8),
+      decoration: BoxDecoration(
+        color: isSelected
+            ? const Color(0xFF6DEDC2) // ✅ 선택 시 민트색
+            : const Color(0xFFF5F5F5), // 기본 회색
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isSelected
+              ? const Color(0xFF6DEDC2) // 선택 시 동일 색 테두리
+              : const Color(0xFFCECECE),
         ),
       ),
-    );
-  }
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+          color: isSelected
+              ? const Color(0xFF424242) // 선택 시 진한 글자
+              : const Color(0xFF616161),
+        ),
+      ),
+    ),
+  );
+}
 
-  Widget _buildClassListItem(Map<String, dynamic> classData) {
-    final String field = classData['field'] ?? '분야';
-    final String className = classData['className'] ?? '멘토 클래스 제목';
-    final String creatorUid = classData['creatorUid'] ?? '';
+Widget _buildClassListItem(Map<String, dynamic> classData) {
+  final String field = classData['field'] ?? '분야';
+  final String className = classData['className'] ?? '멘토 클래스 제목';
+  final String creatorUid = classData['creatorUid'] ?? '';
 
-    return GestureDetector(
-      onTap: () {
-        _showClassDetailModal(classData);
-      },
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 8.0),
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Container(
+  return GestureDetector(
+    onTap: () {
+      _showClassDetailModal(classData);
+    },
+    child: Container(
+      margin: const EdgeInsets.symmetric(vertical: 8.0),
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // 🔥 이미지 영역 (회색 네모 → 실제 이미지)
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.asset(
+              'assets/coverImg/cover.png',
               width: 72,
               height: 72,
-              decoration: BoxDecoration(
-                color: const Color(0xFFBABABA),
-                borderRadius: BorderRadius.circular(8),
-              ),
+              fit: BoxFit.cover,
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    field,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFF9E9E9E),
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    className,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF212121),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  FutureBuilder<Map<String, String>>(
-                    future: _fetchMentorDetails(creatorUid),
-                    builder: (context, snapshot) {
-                      String mentorName = '로딩 중...';
-                      if (snapshot.connectionState == ConnectionState.done &&
-                          snapshot.hasData) {
-                        mentorName = snapshot.data!['mentorName']!;
-                      } else if (snapshot.hasError) {
-                        mentorName = '정보 없음';
-                      }
+          ),
 
-                      return Text(
-                        '$mentorName 및 정보',
-                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                      );
-                    },
+          const SizedBox(width: 16),
+
+          // 텍스트 영역
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  field,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF9E9E9E),
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  className,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF212121),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                FutureBuilder<Map<String, String>>(
+                  future: _fetchMentorDetails(creatorUid),
+                  builder: (context, snapshot) {
+                    String mentorName = '로딩 중...';
+                    if (snapshot.connectionState == ConnectionState.done &&
+                        snapshot.hasData) {
+                      mentorName = snapshot.data!['mentorName']!;
+                    } else if (snapshot.hasError) {
+                      mentorName = '정보 없음';
+                    }
+
+                    return Text(
+                      '$mentorName 및 정보',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                      ),
+                    );
+                  },
+                ),
+              ],
             ),
-            const Icon(Icons.chevron_right, color: Color(0xFF9E9E9E)),
-          ],
-        ),
+          ),
+
+          const Icon(
+            Icons.chevron_right,
+            color: Color(0xFF9E9E9E),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+
+  // 💡 추천 클래스 카드
+  Widget _buildRecommendedClassCard(String title, String mentor, String field) {
+    return Container(
+      width: 160,
+      margin: const EdgeInsets.only(right: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 커버 이미지
+          ClipRRect(
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(12),
+              topRight: Radius.circular(12),
+            ),
+            child: Image.asset(
+              "assets/coverImg/cover.png",
+              width: double.infinity,
+              height: 100,
+              fit: BoxFit.cover,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 분야
+                Text(
+                  field,
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: Color(0xFF9E9E9E),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                // 제목
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF212121),
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                // 멘토
+                Text(
+                  mentor,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF9E9E9E),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -516,9 +607,10 @@ class _ClassListPageState extends State<ClassListPage> {
     switch (index) {
       case 0:
         return Scaffold(
-          backgroundColor: const Color(0xFFF5F5F5),
+          backgroundColor: const Color(0xFFE0E0E0), // 💡 변경: 밝은 회색
           appBar: AppBar(
-            backgroundColor: const Color(0xFFF5F5F5),
+            backgroundColor: const Color(0xFFE0E0E0), // 💡 변경: 밝은 회색
+            elevation: 0,
             scrolledUnderElevation: 0,
             actions: [
               Padding(
@@ -546,12 +638,13 @@ class _ClassListPageState extends State<ClassListPage> {
                     // 헤더 영역
                     Container(
                       width: double.infinity,
+                      color: const Color(0xFFE0E0E0), // 💡 변경: 밝은 회색
                       alignment: Alignment.bottomLeft,
                       padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
                       child: const Text(
                         "오늘은 어떤 성장을\n이뤄볼까요?",
                         style: TextStyle(
-                          color: Color(0xFF212121),
+                          color: Color(0xFF424242),
                           fontSize: 24,
                           fontWeight: FontWeight.w600,
                         ),
@@ -561,7 +654,7 @@ class _ClassListPageState extends State<ClassListPage> {
                     // 필터 칩 및 클래스 리스트
                     Container(
                       decoration: const BoxDecoration(
-                        color: Colors.white,
+                        color: Color(0xFFF5F5F5),
                         borderRadius: BorderRadius.only(
                           topLeft: Radius.circular(32),
                           topRight: Radius.circular(32),
@@ -570,7 +663,7 @@ class _ClassListPageState extends State<ClassListPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const SizedBox(height: 20,),
+                          const SizedBox(height: 20),
                           // 필터 칩
                           Padding(
                             padding: const EdgeInsets.symmetric(
@@ -643,29 +736,28 @@ class _ClassListPageState extends State<ClassListPage> {
                                   ),
                                 ),
                                 const SizedBox(height: 16),
-                                // 추천 클래스
+                                // 💡 추천 클래스 - 실제 디자인 적용
                                 SizedBox(
-                                  height: 150,
-                                  child: ListView.builder(
+                                  height: 220,
+                                  child: ListView(
                                     scrollDirection: Axis.horizontal,
-                                    itemCount: 3,
-                                    itemBuilder: (context, index) {
-                                      return Container(
-                                        width: 120,
-                                        margin: const EdgeInsets.only(
-                                          right: 16,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: Colors.grey[200],
-                                          borderRadius: BorderRadius.circular(
-                                            8,
-                                          ),
-                                        ),
-                                        child: Center(
-                                          child: Text('추천 클래스 ${index + 1}'),
-                                        ),
-                                      );
-                                    },
+                                    children: [
+                                      _buildRecommendedClassCard(
+                                        'Flutter와 앱 개발',
+                                        '김멘토',
+                                        '개발',
+                                      ),
+                                      _buildRecommendedClassCard(
+                                        'UI/UX 디자인 기초',
+                                        '이멘토',
+                                        '디자인',
+                                      ),
+                                      _buildRecommendedClassCard(
+                                        'Python 데이터 분석',
+                                        '박멘토',
+                                        '개발',
+                                      ),
+                                    ],
                                   ),
                                 ),
                                 const SizedBox(height: 120),
@@ -769,13 +861,19 @@ class _ClassListPageState extends State<ClassListPage> {
             bottom: 110,
             right: 30,
             child: GestureDetector(
-              onTap: () {
-                Navigator.push(
+              onTap: () async {
+                // 🔥 수정: async와 await 추가
+                final result = await Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => const CreateClassPage(),
                   ),
                 );
+
+                // 🔥 수정: 돌아왔을 때 result가 true면 새로고침
+                if (result == true) {
+                  _fetchOpenClasses(); // 클래스 목록 다시 불러오기
+                }
               },
               child: Container(
                 width: 60,
@@ -794,7 +892,7 @@ class _ClassListPageState extends State<ClassListPage> {
                 child: const Icon(
                   Icons.add,
                   color: Color(0xFF424242),
-                  size: 30,
+                            size: 30,
                 ),
               ),
             ),

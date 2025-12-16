@@ -14,6 +14,7 @@
         "file_picker",
         "firebase_auth",
         "firebase_core",
+        "firebase_storage",
         "firebase_ui_oauth_google",
         "flutter",
         "google_sign_in",
@@ -55,6 +56,17 @@
         "stream_channel",
         "test_api",
         "vector_math"
+      ]
+    },
+    {
+      "name": "firebase_storage",
+      "version": "12.4.10",
+      "dependencies": [
+        "firebase_core",
+        "firebase_core_platform_interface",
+        "firebase_storage_platform_interface",
+        "firebase_storage_web",
+        "flutter"
       ]
     },
     {
@@ -347,6 +359,45 @@
       ]
     },
     {
+      "name": "firebase_storage_web",
+      "version": "3.10.17",
+      "dependencies": [
+        "_flutterfire_internals",
+        "async",
+        "firebase_core",
+        "firebase_core_web",
+        "firebase_storage_platform_interface",
+        "flutter",
+        "flutter_web_plugins",
+        "http",
+        "meta",
+        "web"
+      ]
+    },
+    {
+      "name": "firebase_storage_platform_interface",
+      "version": "5.2.10",
+      "dependencies": [
+        "_flutterfire_internals",
+        "collection",
+        "firebase_core",
+        "flutter",
+        "meta",
+        "plugin_platform_interface"
+      ]
+    },
+    {
+      "name": "firebase_core_platform_interface",
+      "version": "6.0.0",
+      "dependencies": [
+        "collection",
+        "flutter",
+        "flutter_test",
+        "meta",
+        "plugin_platform_interface"
+      ]
+    },
+    {
       "name": "image_picker_windows",
       "version": "0.2.2",
       "dependencies": [
@@ -529,17 +580,6 @@
       "dependencies": [
         "collection",
         "meta"
-      ]
-    },
-    {
-      "name": "firebase_core_platform_interface",
-      "version": "6.0.0",
-      "dependencies": [
-        "collection",
-        "flutter",
-        "flutter_test",
-        "meta",
-        "plugin_platform_interface"
       ]
     },
     {
@@ -851,6 +891,17 @@
       ]
     },
     {
+      "name": "_flutterfire_internals",
+      "version": "1.3.59",
+      "dependencies": [
+        "collection",
+        "firebase_core",
+        "firebase_core_platform_interface",
+        "flutter",
+        "meta"
+      ]
+    },
+    {
       "name": "file_selector_windows",
       "version": "0.9.3+4",
       "dependencies": [
@@ -946,17 +997,6 @@
       "dependencies": [
         "meta",
         "web"
-      ]
-    },
-    {
-      "name": "_flutterfire_internals",
-      "version": "1.3.59",
-      "dependencies": [
-        "collection",
-        "firebase_core",
-        "firebase_core_platform_interface",
-        "flutter",
-        "meta"
       ]
     },
     {
